@@ -68,17 +68,20 @@ $('#clear-button').click(function() {
   context.clearRect(0, 0, 600, 400);
 });
 
-var ball = {"x":  11, "y":   20,
-	    "ox": 10, "oy":  20};
-var g = 10.0; // pixel / s^2
+var ball = {"x":  11.0, "y":   200,
+	    "ox": 10.0, "oy":  202};
+var g = 20.0; // pixel / s^2
 
 var d = 30;
 
 function update() {
   delDot(ball.x,ball.y);
   var nx = ball.x + (ball.x - ball.ox);
-  var ny = ball.y + (ball.y - ball.oy) + 0.0 * (d/1000.0)^2;
-//  alert (0.0 * (d/1000.0)^2);
+  var ac = g * (d/1000.0)*(d/1000.0);
+  var vy = (ball.y - ball.oy)
+  var ny = ball.y + vy + ac;
+
+  $("#debug").text(nx.toString()+":"+ny.toString());
   ball.ox = ball.x;
   ball.oy = ball.y;
   ball.x = Math.max(0.0, Math.min(mx, nx));
