@@ -1,20 +1,29 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Test</title>
+        <title>Very simple Physics</title>
     </head>
     <body>
-        <canvas id="canvas" width="600" height="400" style="border: 1px solid #999;"></canvas>
-        <div><button id="clear-button">clear</button></div>
+      
+      <p><strong>Move</strong> the mouse to leave a trace.  The ball bounces off of your trace.</p>
+      <p><strong>Click</strong> to jump.</p>
+      
+      <canvas id="canvas" width="800" height="600" style="border: 1px solid #999;"></canvas>
         
-        <script src="jquery.min.js"></script>
-        <script src="jquery.timers-1.1.2.js"></script>
+      <script src="jquery.min.js"></script>
+      <script src="jquery.timers-1.1.2.js"></script>
+      
+      <p class="debug">Press <strong>space</strong> to toggle how strong the ball bounces.  Currently: <span id="bounce"></span></p>
+      <p><strong>Refresh</strong> to reset.</p>
 
-	<p id="debug1"></p>	
-	<p id="debug"></p>
+
+      <p id="debug2" class="debug"></p>	
+      <p id="debug1" class="debug"></p>	
+      <p id="debug" class="debug"></p>
 
 	
-        <script src="here.js"></script>
-        
+      <script src="here.js"></script>
+      
+      <p>Reach the <a href="mailto:matthias.goergens@gmail.com">author</a>.</p>
     </body>
 </html>

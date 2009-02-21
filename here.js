@@ -1,6 +1,6 @@
 var points = [];
-var mx = 600.0;
-var my = 400.0;
+var mx = 800;
+var my = 600;
 
 /* calculate distance between (x1, y1) and (x2, y2) */
 function distance(x1, y1, x2, y2) {
@@ -15,20 +15,9 @@ function distP0(p) {
   return distP (p,vzero);
 }
 
-/* are there any points close to (x, y) ? */
-function anyClose(x, y) {
-  var result = false;
-  $.each(points, function() {
-           if (distance(x, y, this[0], this[1]) < 20) {
-             result = true;
-               return false; // break out of each
-           }
-	   return true;
-         });
-  return result;
-}
-
 var context = $('#canvas')[0].getContext('2d');
+
+$('#canvas').width(mx).height(my);
 
 function cumLen (ps) {
   var l = 0;
@@ -42,22 +31,65 @@ function drawDot(x, y) {
   context.beginPath();
   context.arc(x, y, 2, 0, Math.PI*2, true);
   context.fill();
-}
+};
 
-function drawP(p) {
+function drawLine (p, q) {
+  context.beginPath();
+  context.lineWidth = 1;
+  context.strokeStyle = "rgb(0,0,0)";
+  context.moveTo (p.x, p.y);
+  context.lineTo (q.x, q.y);
+  context.stroke();
+};
+function delLine (p, q) {
+  context.beginPath();
+  context.lineWidth = 2;
+  context.strokeStyle = "rgb(255,255,255)";
+  context.moveTo (p.x, p.y);
+  context.lineTo (q.x, q.y);
+  context.stroke();
+};
+
+
+function drawBall(p) {
   return drawDot (p.x, p.y);
 }
 
 function delDot(x, y) {
   context.fillStyle = "rgb(255,255,255)";
   context.beginPath();
-  context.arc(x, y, 2, 0, Math.PI*2, true);
+  context.arc(x, y, 3, 0, Math.PI*2, true);
   context.fill();
 }
-function delP(p) {
+function delBall(p) {
   return delDot(p.x, p.y);
 };
 
+var minD = 2;
+
+var ball = {c:{x:  15.0, y:   200},
+	    o:{x: 10.0, y:  203}};
+var g = 150.0; // pixel / s^2
+
+var d = 1000.0/30;
+
+var jump = {x:0, y:-100};
+
+
+
+var maxL = 200;
+
+var bouncies = [0.7, 1.1];
+var ibounce = 0;
+var bouncy = bouncies[ibounce];
+
+$('#bounce').text(bouncy.toString());
+
+$('#canvas').keydown(function(e) {
+  ibounce = (ibounce + 1) % bouncies.length;
+  bouncy = bouncies[ibounce];
+  $('#bounce').text(bouncy.toString());
+});
 
 $('#canvas').mousemove(function(e) {
   /* e will give us absolute x, y so we need to calculate relative to canvas position */
@@ -65,14 +97,19 @@ $('#canvas').mousemove(function(e) {
   var ox = e.pageX - pos.left;
   var oy = e.pageY - pos.top;
   var p = {x:ox, y:oy};
-  drawP(p);
-  points.push(p);
 
-    while (cumLen(points) > 200) {
-      var q = points[0];
-      delP(q);
-      points = points.slice(1);
-    }
+  if ((points.length <= 0) || (distP(points[points.length-1], p) >= minD)) {
+    points.push(p);
+  }
+  if (points.length >= 2) {
+    drawLine (points[points.length-2], points[points.length-1]);
+  }
+
+  while ((points.length >= 2) && (cumLen(points) > maxL)) {
+    var q0 = points[0]; var q1 = points[1];
+    delLine(q0, q1);
+    points = points.slice(1);
+  }
 
   return false;
 });
@@ -82,14 +119,9 @@ $('#clear-button').click(function() {
   context.clearRect(0, 0, 600, 400);
 });
 
-var ball = {c:{x:  11.0, y:   200},
-	    o:{x: 10.0, y:  202}};
-var g = 40.0; // pixel / s^2
 
-var d = 30;
 
 function update() {
-
   var nx = ball.c.x + (ball.c.x - ball.o.x);
   var ac = g * (d/1000.0)*(d/1000.0);
   var vy = (ball.c.y - ball.o.y);
@@ -101,8 +133,8 @@ function update() {
 	            y : Math.max(0.0, Math.min(my, ny))}};
   ball = collHandle (points, nball);
 
-  delP (ball.o);
-  drawP (ball.c);
+  delBall (ball.o);
+  drawBall (ball.c);
 
 };
 
@@ -155,16 +187,20 @@ function project(p, q, c, o, cut) {
     return oball;
   }
   var uPQ = smulP (1.0/distP0(pq),pq);
-  var inPQ = smulP (mulPP(v, pq),
+  var inPQ = smulP (mulPP(v, uPQ),
 		    uPQ);
   var normalPQ = subP(v, inPQ);
-  var nv = subP(inPQ, normalPQ);
-  if (distP0(nv) <= epsilon) {
-    return oball;
-  }
-  var unv = smulP (1.0/distP0(nv), nv);
+  var nv = subP(inPQ, smulP(bouncy, normalPQ));
 
-  return {c:addP(cut,smulP(0.5,nv)), o:subP(cut, smulP(0.5,nv))};
+  $("#debug2").text(addP(normalPQ, inPQ)+":"+v);
+
+//  if (distP0(nv) <= epsilon) {
+//    return oball;
+//  }
+//  var unv = smulP (1.0/distP0(nv), nv);
+//  return {c:addP(cut,smulP(0.5,nv)), o:subP(cut, smulP(0.5,nv))};
+
+  return {c:addP(o,nv), o:o};
 
 //  var travSoFar = distP(cut, o);
 
@@ -211,7 +247,7 @@ function intersect (a1, a2, b1, b2) {
       var ua = nomA / den;
       var ub = nomB / den;
       if ((-eps2<=ua) && (ua<=1+eps2) &&
-	  (+eps2<=ub) && (ub<=1-eps2)) {
+	  (+eps2<=ub) && (ub<=1+eps2)) {
 	return {x : x1 + ua * (x2 - x1),
 		y : y1 + ua * (y2 - y1)};
       } else {
@@ -222,20 +258,14 @@ function intersect (a1, a2, b1, b2) {
   }
 };
 
-var p1 = {x:10, y:15}; var p2 = {x:200, y:23};
-var p3 = {x:25, y:210}; var p4 = {x:215, y:190};
 
-drawP(p1); drawP(p2); drawP(p3); drawP(p4);
+$('#canvas').click(function(e) {
+  ball.o = subP(ball.o, smulP(d/1000.0, jump));
+});
 
-var q = intersect (p4, p1, p2, p3);
-
-if (q != false) {
-  drawP(q);
-}
-
-update();
 $(document).everyTime(d, update);
 
+$('.debug').hide();
 
 // $(document).everyTime("0.05s", update);
 
